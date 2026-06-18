@@ -1,0 +1,41 @@
+/* -------------------------------
+  Variables
+------------------------------- */
+:root {
+  --pattern-bg-color: #000;
+
+  --pattern-track-label-bg-color: #9f9f9f;
+  --pattern-track-label-color: #000;
+
+  --pattern-step-height: 18px;
+  --pattern-step-bg-color: #080808;
+  --pattern-step-beat-bg-color: #0e0e0e;
+  --pattern-step-label-color: #ffffff70;
+
+  --pattern-step-active-color: #30cb3f;
+  --pattern-step-active-text-color: #ffffff;
+
+  --pattern-step-recording-color: #cd1818;
+  --pattern-step-recording-text-color: #ffffff;
+
+  --pattern-step-note-color: #00e8be;
+  --pattern-step-instrument-color: #fef749;
+  --pattern-step-fx1-color: #bb58f1;
+  --pattern-step-fx2-color: #57f1ff;
+
+  --pattern-overlay-bg-color: #0e0e0e;
+  --pattern-overlay-accent-color: #fff;
+  --pattern-overlay-title-color: #000;
+  --pattern-overlay-text-color: #fff;
+
+  --instrument-params-border-color: #141414;
+  --instrument-params-container-color: #0f0f0f;
+
+  /* Check if still needed */
+  --baseunit: 8px;
+  --color-bg-primary: #eeeeee;
+  --color-text-primary: #010101;
+  --color-borders: #6180b2;
+  --color-lever1: #e545c3;
+  --color-lever2: #26b3d3;
+}

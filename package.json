@@ -1,0 +1,54 @@
+{
+  "name": "tracker-pti-editor",
+  "version": "0.1.0",
+  "description": "A instrument editor for the Polyend Tracker",
+  "keywords": [],
+  "author": "Sandro 'Sandroid' Ducceschi <hello@sandroid.xyz>",
+  "license": "CC-BY-NC-4.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "dev-with-hosts": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview",
+    "format": "prettier --write src/",
+    "formatting": "prettier --check src/",
+    "lint": "eslint src",
+    "typecheck": "vue-tsc --noEmit",
+    "test": "npm run formatting && npm run lint && npm run typecheck"
+  },
+  "dependencies": {
+    "@elemaudio/core": "^4.0.1",
+    "@elemaudio/web-renderer": "^4.0.3",
+    "@polyend/tracker-lib": "^0.1.1",
+    "@vueuse/core": "^13.4.0",
+    "sortablejs": "^1.15.6",
+    "vue": "^3.5.13",
+    "wavefile": "^11.0.0",
+    "wavesurfer.js": "^7.10.1",
+    "webmidi": "^3.1.12"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "@rushstack/eslint-patch": "^1.10.5",
+    "@types/node": "^24.1.0",
+    "@types/web-bluetooth": "^0.0.21",
+    "@vitejs/plugin-vue": "^6.0.7",
+    "@vue/eslint-config-prettier": "^10.2.0",
+    "@vue/eslint-config-typescript": "^14.5.1",
+    "eslint": "^9.20.1",
+    "eslint-plugin-vue": "^9.32.0",
+    "jiti": "^2.5.1",
+    "prettier": "^3.5.1",
+    "sass": "^1.85.0",
+    "sass-loader": "^16.0.5",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.25.0",
+    "vite": "^8.0.16",
+    "vite-svg-loader": "^5.1.0",
+    "vue-tsc": "^2.2.4"
+  }
+}

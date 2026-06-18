@@ -1,0 +1,34 @@
+/* -------------------------------
+  Fonts
+------------------------------- */
+@font-face {
+  font-display: swap;
+  font-family: 'Button';
+  font-style: normal;
+  font-weight: 500;
+  src: url('../fonts/tracker-button.woff2') format('woff2');
+}
+@font-face {
+  font-display: swap;
+  font-family: 'TrackerNew';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../fonts/tracker-new-regular.woff2') format('woff2');
+}
+@mixin tracker-button() {
+  font-family: 'Button', sans-serif;
+  font-weight: 500;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  line-height: normal;
+}
+@mixin tracker-new() {
+  font-family: 'TrackerNew', sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  line-height: normal;
+}

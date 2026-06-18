@@ -1,0 +1,32 @@
+/* -------------------------------
+  Imports
+------------------------------- */
+@use 'reset';
+@use 'fonts';
+@use 'variables';
+@use 'animations';
+@use 'typography';
+
+/* -------------------------------
+  Globals / Body
+------------------------------- */
+html {
+  position: relative;
+  font-size: 62.5%;
+  padding: 0;
+  margin: 0;
+}
+body {
+  position: relative;
+  padding: 0;
+  margin: 0;
+  font-size: 1.4rem;
+  @include fonts.tracker-new;
+  color: white;
+  background: #141517;
+}
+
+input {
+  font-family: inherit;
+  font-size: inherit;
+}
