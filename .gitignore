@@ -6,3 +6,21 @@
 *.map
 node_modules
 dist
+
+# Screenshots and images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+screenshots/
+
+# OS files
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local dev overrides
+*.local

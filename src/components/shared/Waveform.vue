@@ -193,7 +193,7 @@
         window.addEventListener('keyup', handleKey);
       }
 
-      container.addEventListener('wheel', handleMouseWheel);
+      container.addEventListener('wheel', handleMouseWheel, { passive: false });
 
       wsInstance.value = ws;
       render();
@@ -405,7 +405,8 @@
     if (!evt.shiftKey) {
       const ws = wsInstance.value;
       if (ws) {
-        const increment = evt.deltaY;
+        evt.preventDefault();
+        const increment = evt.deltaY * 50;
         let value = zoom.value + increment;
         if (value < minZoom) {
           value = minZoom;

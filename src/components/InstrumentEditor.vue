@@ -165,7 +165,13 @@
   //---------------------------------------------------
   // onBeforeMount(() => {});
   onMounted(async () => {
-    await WebMidi.enable();
+    // MIDI is optional – the editor works with keyboard only
+    try {
+      await WebMidi.enable();
+    } catch {
+      // User denied MIDI permission or browser doesn't support it
+      console.warn('Web MIDI not available – keyboard playback will still work');
+    }
     if (WebMidi.enabled) {
       availableMidiInputs.value = WebMidi.inputs.map((o) => o.name);
       availableMidiOutputs.value = WebMidi.outputs.map((o) => o.name);
@@ -177,23 +183,23 @@
       if (midiOut) {
         midiOutput.value = WebMidi.getOutputByName(midiOut);
       }
-
-      await AudioEngine.init();
-
-      if (props.modelValue) {
-        instrumentData.value = props.modelValue;
-        changeActiveView(InstrumentView.PLAYBACK);
-        nextTick(async () => {
-          activeView.value?.render();
-          if (AudioEngine.isInitialized) {
-            vfsInstrument = await AudioEngine.addInstrument(props.modelValue!);
-          }
-        });
-      }
-
-      window.addEventListener(KeyboardEvents.KEY_DOWN, handleKeyboardEvents);
-      window.addEventListener(KeyboardEvents.KEY_UP, handleKeyboardEvents);
     }
+
+    await AudioEngine.init();
+
+    if (props.modelValue) {
+      instrumentData.value = props.modelValue;
+      changeActiveView(InstrumentView.PLAYBACK);
+      nextTick(async () => {
+        activeView.value?.render();
+        if (AudioEngine.isInitialized) {
+          vfsInstrument = await AudioEngine.addInstrument(props.modelValue!);
+        }
+      });
+    }
+
+    window.addEventListener(KeyboardEvents.KEY_DOWN, handleKeyboardEvents);
+    window.addEventListener(KeyboardEvents.KEY_UP, handleKeyboardEvents);
   });
   // onBeforeUpdate(() => {});
   // onUpdated(() => {});

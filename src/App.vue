@@ -9,6 +9,8 @@
   import { InstrumentData } from '@polyend/tracker-lib';
   import PatternEditor from '@/components/PatternEditor.vue';
   import InstrumentEditor from '@/components/InstrumentEditor.vue';
+  import ModalHelp from '@/components/modals/ModalHelp.vue';
+  import VueComp from '@/utils/vuecomp.ts';
   import { loadPersistedInstruments, persistInstrument } from '@/utils/persistence.ts';
 
   //---------------------------------------------------
@@ -86,6 +88,10 @@
     }
   }
 
+  function showHelp() {
+    VueComp.create(ModalHelp, document.body, {});
+  }
+
   //---------------------------------------------------
   //
   //  Keyboard Shortcuts
@@ -139,6 +145,7 @@
         Instrument Editor
       </button>
       <span class="shortcut-hint">Tab to switch</span>
+      <button class="help-btn" @click="showHelp" title="Guide / Help">?</button>
     </nav>
 
     <div v-show="activeView === 'pattern'" class="view-container">
@@ -219,6 +226,28 @@
       padding: 0 12px;
       font-size: 10px;
       color: #555;
+    }
+
+    .help-btn {
+      margin-left: auto;
+      width: 26px;
+      height: 26px;
+      padding: 0 !important;
+      font-size: 13px !important;
+      font-weight: bold;
+      color: #666 !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 50% !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+
+      &:hover {
+        color: #fff !important;
+        border-color: rgba(255, 255, 255, 0.3) !important;
+        background: rgba(255, 255, 255, 0.08) !important;
+      }
     }
   }
 
