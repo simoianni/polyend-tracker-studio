@@ -7,12 +7,14 @@
 node_modules
 dist
 
-# Screenshots and images
+# Screenshots and images (allow README screenshots)
 *.png
 *.jpg
 *.jpeg
 *.gif
 *.svg
+!screenshot-pattern.png
+!screenshot-instrument.png
 screenshots/
 
 # OS files

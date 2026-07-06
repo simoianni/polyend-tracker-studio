@@ -1,9 +1,9 @@
 {
   "name": "tracker-unified-editor",
-  "version": "0.1.0",
-  "description": "A instrument editor for the Polyend Tracker",
-  "keywords": [],
-  "author": "Sandro 'Sandroid' Ducceschi <hello@sandroid.xyz>",
+  "version": "0.2.0",
+  "description": "A unified pattern & instrument editor for the Polyend Tracker",
+  "keywords": ["polyend", "tracker", "music", "audio", "pti", "mtp", "pattern", "instrument"],
+  "author": "simoianni",
   "license": "CC-BY-NC-4.0",
   "type": "module",
   "engines": {
