@@ -7,6 +7,7 @@
   import { nextTick, PropType, ref } from 'vue';
   import { InstrumentData, InstrumentPlayMode, MAX_16BIT } from '@polyend/tracker-lib';
   import Waveform from '@/components/shared/Waveform.vue';
+  import { seconds2frames } from '@/utils/helpers.ts';
 
   //---------------------------------------------------
   //
@@ -130,14 +131,31 @@
 
   function sliceAdd() {
     const instrument = props.instrumentData;
-    if (instrument) {
-      const lastIndex = instrument.numSlices;
-      let lastSlice = instrument.slices[lastIndex - 1];
-      if (!lastSlice) {
-        lastSlice = 0;
+    if (instrument && instrument.numSlices < instrument.slices.length) {
+      // Place the new slice at the cursor position clicked on the waveform
+      const time = waveformInstance.value?.getCurrentTime() || 0;
+      let position = Math.min(seconds2frames(time, instrument), MAX_16BIT - 1);
+      if (position <= 0) {
+        let lastSlice = instrument.slices[instrument.numSlices - 1];
+        if (!lastSlice) {
+          lastSlice = 0;
+        }
+        position = lastSlice + Math.floor((MAX_16BIT - lastSlice) / 2);
       }
-      instrument.numSlices += 1;
-      instrument.slices[lastIndex] = lastSlice + Math.floor((MAX_16BIT - lastSlice) / 2);
+
+      const active = instrument.slices.slice(0, instrument.numSlices);
+      if (!active.includes(position)) {
+        active.push(position);
+        active.sort((a, b) => a - b);
+        active.forEach((value, index) => {
+          instrument.slices[index] = value;
+        });
+        instrument.numSlices += 1;
+
+        const newIndex = active.indexOf(position);
+        instrument.selectedSlice = newIndex;
+        emit('update:activeSliceIndex', newIndex);
+      }
       update();
     }
   }

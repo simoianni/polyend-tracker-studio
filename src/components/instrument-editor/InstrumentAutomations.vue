@@ -247,7 +247,7 @@
     display: flex;
     background: black;
     width: 100%;
-    height: 100%;
+    flex: 1;
     padding: 3px 2px;
     min-width: 804px;
     min-height: 404px;
@@ -255,7 +255,7 @@
     & > div {
       position: relative;
       width: 14%;
-      height: 100%;
+      flex: 1;
       border: 6px solid var(--instrument-params-border-color);
       background: var(--instrument-params-border-color);
       margin-right: 2px;

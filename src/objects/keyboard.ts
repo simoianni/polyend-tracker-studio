@@ -4,10 +4,10 @@ export enum KeyboardEvents {
 }
 
 export const StepAttributeKeyCodes = {
-  F1: 'F1',
-  F2: 'F2',
-  F3: 'F3',
-  F4: 'F4',
+  NOTE: 'Digit1',
+  INSTRUMENT: 'Digit2',
+  FX1: 'Digit3',
+  FX2: 'Digit4',
 };
 
 export const OperatorKeyCodes = {

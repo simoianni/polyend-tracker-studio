@@ -80,6 +80,7 @@
   const minZoom = 0;
   const maxZoom = 66666;
   let lastTime = 0;
+  let lastInteractionTime = 0;
 
   const colors = {
     waveColor: '#eeeeee',
@@ -171,6 +172,13 @@
         dragToSeek: !props.editorMode,
       });
 
+      // Track the clicked position directly: the media element seek is async,
+      // so getCurrentTime() would still be stale right after the first click
+      ws.on('interaction', (newTime: number) => {
+        lastInteractionTime = newTime;
+      });
+      container.addEventListener('pointerdown', handlePointerDown);
+
       if (props.editorMode) {
         ws.on('finish', () => {
           ws.setTime(lastTime);
@@ -200,6 +208,7 @@
     if (container) {
       window.removeEventListener('keyup', handleKey);
       container.removeEventListener('wheel', handleMouseWheel);
+      container.removeEventListener('pointerdown', handlePointerDown);
     }
     wsInstance?.value?.destroy();
   });
@@ -218,6 +227,7 @@
     const instrument = props.instrumentData;
     const ws = wsInstance.value;
     if (ws && instrument) {
+      lastInteractionTime = 0;
       empty();
 
       const isStereo = instrument.sample.channels === 2;
@@ -275,6 +285,10 @@
 
   function empty() {
     wsInstance.value?.empty();
+  }
+
+  function getCurrentTime(): number {
+    return lastInteractionTime || wsInstance.value?.getCurrentTime() || 0;
   }
 
   //----------------------------------
@@ -375,6 +389,18 @@
   //----------------------------------
   // Event Handlers
   //----------------------------------
+  function handlePointerDown(evt: PointerEvent) {
+    const ws = wsInstance.value;
+    if (ws) {
+      const duration = ws.getDuration();
+      const rect = ws.getWrapper().getBoundingClientRect();
+      if (duration > 0 && rect.width > 0) {
+        const relativeX = Math.min(Math.max((evt.clientX - rect.left) / rect.width, 0), 1);
+        lastInteractionTime = relativeX * duration;
+      }
+    }
+  }
+
   function handleMouseWheel(evt: WheelEvent) {
     if (!evt.shiftKey) {
       const ws = wsInstance.value;
@@ -529,7 +555,7 @@
   //  Expose
   //
   //---------------------------------------------------
-  defineExpose({ render, stream, update, load, empty });
+  defineExpose({ render, stream, update, load, empty, getCurrentTime });
 </script>
 
 <template>

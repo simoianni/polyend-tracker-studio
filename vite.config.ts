@@ -6,7 +6,7 @@ import svgLoader from 'vite-svg-loader';
 // https://vitejs.dev/config/
 export default defineConfig((): UserConfig => {
   return {
-    base: '/instrumented/',
+    base: '',
     plugins: [
       vue(),
       svgLoader({

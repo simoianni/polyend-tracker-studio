@@ -4,7 +4,7 @@
   //  Imports
   //
   //---------------------------------------------------
-  import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+  import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, PropType } from 'vue';
   import VueComp from '@/utils/vuecomp.ts';
   import { Input, NoteMessageEvent, Output, WebMidi } from 'webmidi';
   import Tracker, { InstrumentData, InstrumentPlayMode } from '@polyend/tracker-lib';
@@ -49,13 +49,23 @@
   //  Properties
   //
   //---------------------------------------------------
+  const props = defineProps({
+    modelValue: {
+      type: Object as PropType<InstrumentData | null>,
+      default: null,
+    },
+    slotNumber: {
+      type: Number,
+      default: 0,
+    },
+  });
 
   //---------------------------------------------------
   //
   //  Emits
   //
   //---------------------------------------------------
-  // const emit = defineEmits([]);
+  const emit = defineEmits(['update:modelValue', 'back']);
 
   //---------------------------------------------------
   //
@@ -119,6 +129,24 @@
   //
   //---------------------------------------------------
   // watch(instrumentData, async (newval, oldval) => {}, { deep: true });
+
+  watch(() => props.modelValue, (newVal) => {
+    if (newVal && newVal !== instrumentData.value) {
+      instrumentData.value = newVal;
+      changeActiveView(InstrumentView.PLAYBACK);
+      nextTick(async () => {
+        activeView.value?.render();
+        if (AudioEngine.isInitialized) {
+          vfsInstrument = await AudioEngine.addInstrument(newVal);
+        }
+      });
+    }
+  });
+
+  watch(instrumentData, (newVal) => {
+    emit('update:modelValue', newVal);
+  });
+
   watch(midiInput, (newInput, oldInput) => {
     if (oldInput) {
       oldInput.removeListener('noteon', handleMidiNoteOn);
@@ -152,6 +180,17 @@
 
       await AudioEngine.init();
 
+      if (props.modelValue) {
+        instrumentData.value = props.modelValue;
+        changeActiveView(InstrumentView.PLAYBACK);
+        nextTick(async () => {
+          activeView.value?.render();
+          if (AudioEngine.isInitialized) {
+            vfsInstrument = await AudioEngine.addInstrument(props.modelValue!);
+          }
+        });
+      }
+
       window.addEventListener(KeyboardEvents.KEY_DOWN, handleKeyboardEvents);
       window.addEventListener(KeyboardEvents.KEY_UP, handleKeyboardEvents);
     }
@@ -169,7 +208,7 @@
       midi.removeListener('noteon', handleMidiNoteOn);
       midi.removeListener('noteoff', handleMidiNoteOff);
     }
-    await AudioEngine.destroy();
+    // NOTE: do NOT destroy AudioEngine here - PatternEditor uses it for playback
   });
   // onUnmounted(() => {});
 
@@ -179,9 +218,17 @@
   //
   //---------------------------------------------------
   async function createInstrumentFromSample() {
-    const file = (await requestFiles('audio/wav', false)) as File;
+    const file = (await requestFiles('audio/*', false).catch(() => null)) as File | null;
     if (file) {
-      const { buffer, slices } = await processAudioFile(file);
+      let buffer: ArrayBuffer;
+      let slices: number[];
+      try {
+        ({ buffer, slices } = await processAudioFile(file));
+      } catch (e) {
+        console.error('Failed to load sample:', file.name, e);
+        alert(`Could not load "${file.name}": unsupported or corrupted audio file.`);
+        return;
+      }
       if (slices.length > 0) {
         VueComp.create(ModalUseSampleCuepoints, document.body, {
           numCuePoints: slices.length,
@@ -200,13 +247,16 @@
   }
 
   async function createSlicedInstrumentFromSamples() {
-    const files = (await requestFiles('audio/wav', true)) as FileList;
+    const files = (await requestFiles('audio/*', true).catch(() => null)) as FileList | null;
+    if (!files || files.length === 0) return;
     VueComp.create(ModalCreatedSliced, document.body, {
       files,
       onAction: async (files: File[]) => {
         const combined = await combineAudioFiles(files);
         if (combined) {
           loadInstrumentFromSample(combined.buffer, combined.slices);
+        } else {
+          alert('Could not create the sliced instrument: unsupported or corrupted audio files.');
         }
       },
     });
@@ -261,7 +311,6 @@
   }
 
   function handleParameterBarAction(actionobj: { action: string; value: any }) {
-    console.log(actionobj);
     const { action, value } = actionobj;
     switch (action) {
       case 'instrument-parameter-page':
@@ -545,6 +594,12 @@
 
     <div class="group">
       <Button @click="handleMidiConfig"><sup>Configure</sup> MIDI</Button>
+    </div>
+
+    <div class="group separator" />
+
+    <div class="group">
+      <Button @click="emit('back')"><sup>Back to</sup> Pattern</Button>
     </div>
   </div>
 </template>

@@ -1,5 +1,5 @@
 {
-  "name": "tracker-pti-editor",
+  "name": "tracker-unified-editor",
   "version": "0.1.0",
   "description": "A instrument editor for the Polyend Tracker",
   "keywords": [],
@@ -25,6 +25,7 @@
     "@elemaudio/web-renderer": "^4.0.3",
     "@polyend/tracker-lib": "^0.1.1",
     "@vueuse/core": "^13.4.0",
+    "jszip": "^3.10.1",
     "sortablejs": "^1.15.6",
     "vue": "^3.5.13",
     "wavefile": "^11.0.0",

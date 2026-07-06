@@ -13,7 +13,7 @@
   //---------------------------------------------------
   const props = defineProps({
     type: {
-      type: String as PropType<'button' | 'file'>,
+      type: String as PropType<'button' | 'file' | 'folder'>,
       default: 'button',
     },
     mimeTypes: {
@@ -65,7 +65,7 @@
   //  Emits
   //
   //---------------------------------------------------
-  const emit = defineEmits(['click', 'file', 'page']);
+  const emit = defineEmits(['click', 'file', 'page', 'folder']);
 
   //---------------------------------------------------
   //
@@ -113,8 +113,8 @@
     const container = evt.currentTarget as HTMLDivElement;
     if (!container) return;
 
-    if (props.type === 'file') {
-      const input = container.querySelector('& > input') as HTMLInputElement;
+    if (props.type === 'file' || props.type === 'folder') {
+      const input = container.querySelector('input[type="file"]') as HTMLInputElement;
       if (input) {
         input.click();
       }
@@ -137,9 +137,16 @@
 
   function handleInput(event: Event) {
     const input = event.currentTarget as HTMLInputElement;
-    const file = (input?.files || [])[0];
-    if (file) {
-      emit('file', file);
+    if (props.type === 'folder') {
+      const files = input.files;
+      if (files && files.length > 0) {
+        emit('folder', Array.from(files));
+      }
+    } else {
+      const file = (input?.files || [])[0];
+      if (file) {
+        emit('file', file);
+      }
     }
     input.value = '';
   }
@@ -157,7 +164,8 @@
       <li v-for="(page, pidx) in pages" :key="`page-${pidx}`" :class="{ active: page === activePage }" />
     </ul>
     <slot />
-    <input v-if="type === 'file'" type="file" :accept="mimeTypes" tabindex="-1" @input="handleInput" />
+    <input v-if="type === 'file'" type="file" :accept="mimeTypes" tabindex="-1" aria-hidden="true" @input="handleInput" />
+    <input v-if="type === 'folder'" type="file" webkitdirectory directory tabindex="-1" aria-hidden="true" @input="handleInput" />
   </button>
 </template>
 
@@ -188,6 +196,7 @@
     box-shadow: 0 0.5px 0 rgba(255, 255, 255, 0.15);
     transform: translate(0, 0);
     outline: 0;
+    overflow: hidden;
 
     &.small {
       display: block;
@@ -237,6 +246,19 @@
       border: 1.2px solid white;
       border-radius: 3.4px;
       opacity: 0.1;
+    }
+
+    & > input[type='file'] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+      outline: 0;
     }
 
     &.blue {

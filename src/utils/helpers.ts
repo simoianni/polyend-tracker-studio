@@ -105,48 +105,70 @@ export function frames2seconds(frames: number, instrument: InstrumentData): numb
   return (frames * (sampleLength / MAX_16BIT)) / SAMPLE_RATE;
 }
 
-export function processAudioFile(file: File, sampleRate: number = 44100, bitDepth: number = 16) {
-  return new Promise<{ buffer: ArrayBuffer; samples: Int16Array; slices: number[]; channels: number }>(
-    (resolve, reject) => {
-      try {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const wav = new WaveFile(new Uint8Array(reader.result as ArrayBuffer));
+export async function processAudioFile(
+  file: File,
+  sampleRate: number = 44100,
+  bitDepth: number = 16,
+): Promise<{ buffer: ArrayBuffer; samples: Int16Array; slices: number[]; channels: number }> {
+  const inputBuffer = await file.arrayBuffer();
 
-          /** @ts-expect-error i can't be arsed :P */
-          const fmtBitsPerSample = wav.fmt.bitsPerSample;
-          /** @ts-expect-error i can't be arsed :P */
-          const fmtSampleRate = wav.fmt.sampleRate;
-          /** @ts-expect-error i can't be arsed :P */
-          const channels = wav.fmt.numChannels;
+  // First try to parse it as a PCM WAV file (keeps cue points as slices)
+  try {
+    const wav = new WaveFile(new Uint8Array(inputBuffer));
 
-          if (fmtBitsPerSample > bitDepth) {
-            wav.toBitDepth(bitDepth.toString());
-          }
-          if (fmtSampleRate > sampleRate) {
-            wav.toSampleRate(sampleRate);
-          }
+    /** @ts-expect-error i can't be arsed :P */
+    const fmtBitsPerSample = wav.fmt.bitsPerSample;
+    /** @ts-expect-error i can't be arsed :P */
+    const fmtSampleRate = wav.fmt.sampleRate;
+    /** @ts-expect-error i can't be arsed :P */
+    const channels = wav.fmt.numChannels;
 
-          const buffer = wav.toBuffer().buffer as ArrayBuffer;
-          /** @ts-expect-error i can't be arsed :P */
-          const samples = wav.getSamples(true) as Int16Array;
-          /** @ts-expect-error i can't be arsed :P */
-          const samples64 = wav.getSamples() as Float64Array[];
-          const samplesLen = samples64[0].length;
-          const cuePoints = wav
-            .listCuePoints()
-            /** @ts-expect-error i can't be arsed :P */
-            .map((cue) => Math.round(((cue.dwPosition || 0) / samplesLen) * MAX_16BIT));
+    if (fmtBitsPerSample > bitDepth) {
+      wav.toBitDepth(bitDepth.toString());
+    }
+    if (fmtSampleRate > sampleRate) {
+      wav.toSampleRate(sampleRate);
+    }
 
-          const slices: number[] = cuePoints.slice(0, 48);
-          resolve({ buffer, slices, samples, channels });
-        };
-        reader.readAsArrayBuffer(file);
-      } catch (e) {
-        reject(e);
+    const buffer = wav.toBuffer().buffer as ArrayBuffer;
+    /** @ts-expect-error i can't be arsed :P */
+    const samples = wav.getSamples(true) as Int16Array;
+    /** @ts-expect-error i can't be arsed :P */
+    const samples64 = wav.getSamples() as Float64Array[];
+    const samplesLen = samples64[0].length;
+    const cuePoints = wav
+      .listCuePoints()
+      /** @ts-expect-error i can't be arsed :P */
+      .map((cue) => Math.round(((cue.dwPosition || 0) / samplesLen) * MAX_16BIT));
+
+    const slices: number[] = cuePoints.slice(0, 48);
+    return { buffer, slices, samples, channels };
+  } catch (e) {
+    console.warn(`Could not parse "${file.name}" as PCM WAV, decoding with WebAudio instead:`, e);
+  }
+
+  // Fallback: let the browser decode any audio format (mp3, m4a, aiff, flac,
+  // compressed wav, ...) and rebuild a 16-bit PCM WAV from the decoded data
+  const audioContext = new AudioContext({ sampleRate });
+  try {
+    const audioBuffer = await audioContext.decodeAudioData(inputBuffer.slice(0));
+    const channels = Math.min(audioBuffer.numberOfChannels, 2);
+    const length = audioBuffer.length;
+    const samples = new Int16Array(length * channels);
+    for (let ch = 0; ch < channels; ch++) {
+      const data = audioBuffer.getChannelData(ch);
+      for (let i = 0; i < length; i++) {
+        const value = Math.max(-1, Math.min(1, data[i]));
+        samples[i * channels + ch] = Math.round(value * 32767);
       }
-    },
-  );
+    }
+    const wav = new WaveFile();
+    wav.fromScratch(channels, sampleRate, String(bitDepth), samples);
+    const buffer = wav.toBuffer().buffer as ArrayBuffer;
+    return { buffer, slices: [], samples, channels };
+  } finally {
+    await audioContext.close();
+  }
 }
 
 export async function combineAudioFiles(
