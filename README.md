@@ -4,8 +4,10 @@ A web-based editor for creating, editing, and playing **Polyend Tracker patterns
 Built with [`tracker-lib`](https://github.com/polyend/tracker-lib), Vue 3, and Elementary Audio.
 
 ![Pattern Editor](screenshot-pattern.png)
+*Pattern Editor — step sequencer with a melody and bassline loaded*
 
 ![Instrument Editor](screenshot-instrument.png)
+*Instrument Editor — sample waveform with playmode selection*
 
 
 ## Features
@@ -91,9 +93,9 @@ npm run dev
 | `.` / `/` | Octave down / up |
 
 
-## 🙏 Credits
+## Credits
 
-This project is a fork of the original **[Polyend Tracker Instrument Editor](https://github.com/polyend/tracker-unified-editor)** by **Sandro "Sandroid" Ducceschi**. Huge thanks to Sandro for:
+This project is a fork of the original **Polyend Tracker Instrument Editor** by **Sandro "Sandroid" Ducceschi**. Huge thanks to Sandro for:
 - The initial codebase and vision for a web-based Tracker editor
 - Creating and maintaining [`tracker-lib`](https://github.com/polyend/tracker-lib)
 - The original instrument editor, sample recorder, and audio engine
