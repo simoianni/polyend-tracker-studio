@@ -1,4 +1,4 @@
-# Polyend Tracker — Unified Editor
+# Polyend Tracker Studio
 
 A web-based editor for creating, editing, and playing **Polyend Tracker patterns and instruments**.\
 Built with [`tracker-lib`](https://github.com/polyend/tracker-lib), Vue 3, and Elementary Audio.
