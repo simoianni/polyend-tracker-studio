@@ -8,6 +8,7 @@ import Pattern from '@tracker-internals/patterns/pattern.js';
 import Instrument from '@tracker-internals/instruments/instrument.js';
 import Metadata from '@tracker-internals/patterns/metadata.js';
 import { buildProjectZip, exportTrackerProject, sanitizeTrackerName } from '../src/utils/export.ts';
+import { applyTrackerLibPatches, detectTrackCount } from '../src/utils/tracker-lib-patches.ts';
 
 //---------------------------------------------------
 //  Helpers
@@ -229,5 +230,42 @@ describe('exportTrackerProject', () => {
   it('returns a non-empty zip Blob', async () => {
     const blob = await exportTrackerProject({ projectName: 'My Song', bpm: 128, patterns, instruments });
     expect(blob.size).toBeGreaterThan(1000);
+  });
+});
+
+//---------------------------------------------------
+//  Old-firmware pattern support (tracker-lib patch)
+//---------------------------------------------------
+
+describe('tracker-lib detectTrackCount patch', () => {
+  const HEADER = 14 + 2 + 12; // header + padding + reserved, as parse() consumes
+  const TRACK = 1 + 6 * 128;
+  const CRC = 4;
+
+  it('detects 8/12/16 tracks from the exact file sizes parse() consumes', () => {
+    expect(detectTrackCount(HEADER + TRACK * 8 + CRC)).toBe(8); // 6184 — old firmware (e.g. Tracker AE packs)
+    expect(detectTrackCount(HEADER + TRACK * 12 + CRC)).toBe(12); // 9260 — OG Tracker
+    expect(detectTrackCount(HEADER + TRACK * 16 + CRC)).toBe(16); // 12336 — Tracker+ / Mini
+    expect(detectTrackCount(999)).toBe(16); // unknown size → default
+  });
+
+  it('parses an 8-track old-firmware pattern without crashing', () => {
+    applyTrackerLibPatches();
+
+    // Build an 8-track file from a lib-written 16-track buffer:
+    // same header + reserved bytes, first 8 tracks, same CRC field.
+    const full = Pattern.write(makeTestPattern());
+    const bytes = new Uint8Array(full);
+    const eightTrack = new Uint8Array(HEADER + TRACK * 8 + CRC);
+    eightTrack.set(bytes.subarray(0, HEADER + TRACK * 8), 0);
+    eightTrack.set(bytes.subarray(full.byteLength - CRC), HEADER + TRACK * 8);
+
+    const parsed = Pattern.parse(eightTrack.buffer);
+    expect(parsed.trackCount).toBe(8);
+    expect(parsed.tracks).toHaveLength(8);
+    // Step data must round-trip identically for the surviving tracks
+    const original = makeTestPattern();
+    expect(parsed.tracks[1].steps[4].note).toBe(original.tracks[1].steps[4].note);
+    expect(parsed.tracks[3].steps[8].instrument).toBe(original.tracks[3].steps[8].instrument);
   });
 });
