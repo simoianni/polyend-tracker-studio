@@ -37,6 +37,11 @@ export default defineConfig((): UserConfig => {
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
+        // Deep-import of tracker-lib internals (buffer-level read/write classes).
+        // The package's `exports` map only exposes the main entry, whose write
+        // methods trigger one browser download per file — unusable for zipped
+        // project export. Aliasing straight to dist/ bypasses the exports map.
+        '@tracker-internals': fileURLToPath(new URL('./node_modules/@polyend/tracker-lib/dist', import.meta.url)),
       },
     },
   };

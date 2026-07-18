@@ -2,7 +2,16 @@
   "name": "polyend-tracker-studio",
   "version": "0.2.0",
   "description": "A unified pattern & instrument editor for the Polyend Tracker",
-  "keywords": ["polyend", "tracker", "music", "audio", "pti", "mtp", "pattern", "instrument"],
+  "keywords": [
+    "polyend",
+    "tracker",
+    "music",
+    "audio",
+    "pti",
+    "mtp",
+    "pattern",
+    "instrument"
+  ],
   "author": "simoianni",
   "license": "CC-BY-NC-4.0",
   "type": "module",
@@ -18,7 +27,8 @@
     "formatting": "prettier --check src/",
     "lint": "eslint src",
     "typecheck": "vue-tsc --noEmit",
-    "test": "npm run formatting && npm run lint && npm run typecheck"
+    "test:unit": "vitest run",
+    "test": "npm run formatting && npm run lint && npm run typecheck && npm run test:unit"
   },
   "dependencies": {
     "@elemaudio/core": "^4.0.1",
@@ -50,6 +60,7 @@
     "typescript-eslint": "^8.25.0",
     "vite": "^8.0.16",
     "vite-svg-loader": "^5.1.0",
+    "vitest": "^4.1.10",
     "vue-tsc": "^2.2.4"
   }
 }

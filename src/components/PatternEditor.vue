@@ -4,7 +4,7 @@
   //  Imports
   //
   //---------------------------------------------------
-  import { computed, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, watch, PropType } from 'vue';
+  import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch, PropType } from 'vue';
   import Tracker, { PatternData, PatternFX, InstrumentData, ProjectData } from '@polyend/tracker-lib';
   import {
     AttributeListItem,
@@ -35,6 +35,7 @@
   import { VFSInstrument } from '@/types/audio-engine.ts';
   import { exportPatternAsMidi } from '@/utils/midi.ts';
   import { exportAbletonProject } from '@/utils/ableton.ts';
+  import { exportTrackerProject, sanitizeTrackerName } from '@/utils/export.ts';
   import { downloadFile } from '@/utils/io.ts';
 
   //---------------------------------------------------
@@ -73,7 +74,7 @@
   const bpm = ref(120);
   const playRow = ref(0);
   let playInterval: ReturnType<typeof setInterval> | null = null;
-  let activeNotes: Map<string, VFSInstrument | null> = new Map();
+  const activeNotes: Map<string, VFSInstrument | null> = new Map();
   const loadedInstruments = new Map<number, VFSInstrument>();
 
   //----------------------------------
@@ -152,12 +153,16 @@
   //---------------------------------------------------
   // watch(value, (newval, oldval) => { console.log(newval, oldval); });
 
-  watch(() => props.instrumentStore, async () => {
-    if (isPlaying.value) {
-      // Reload instruments while keeping playback running
-      await ensureInstrumentsLoaded();
-    }
-  }, { deep: true });
+  watch(
+    () => props.instrumentStore,
+    async () => {
+      if (isPlaying.value) {
+        // Reload instruments while keeping playback running
+        await ensureInstrumentsLoaded();
+      }
+    },
+    { deep: true },
+  );
 
   //---------------------------------------------------
   //
@@ -615,15 +620,19 @@
     if (!pattern) return;
     const data = exportPatternAsMidi(pattern.tracks, bpm.value);
     if (data.length === 0) return;
-    downloadFile('Pattern.mid', new Blob([data], { type: 'audio/midi' }));
+    // Copy into a fresh ArrayBuffer-backed view — TS 5.7+ narrows BlobPart to
+    // ArrayBufferView<ArrayBuffer>, which Uint8Array<ArrayBufferLike> fails.
+    const buffer = new Uint8Array(data).buffer as ArrayBuffer;
+    downloadFile('Pattern.mid', new Blob([buffer], { type: 'audio/midi' }));
   }
 
   async function handleAbletonExport() {
-    const patterns = projectPatterns.value.length > 0
-      ? projectPatterns.value
-      : patternData.value
-        ? [{ name: 'Pattern', data: patternData.value }]
-        : [];
+    const patterns =
+      projectPatterns.value.length > 0
+        ? projectPatterns.value
+        : patternData.value
+          ? [{ name: 'Pattern', data: patternData.value }]
+          : [];
 
     if (patterns.length === 0) return;
 
@@ -644,11 +653,50 @@
     }
   }
 
+  async function handleProjectExport() {
+    const patterns =
+      projectPatterns.value.length > 0
+        ? projectPatterns.value
+        : patternData.value
+          ? [{ name: 'Pattern 1', data: patternData.value }]
+          : [];
+
+    if (patterns.length === 0) return;
+
+    // Convert instrumentStore Map to a slot-indexed array
+    const instruments: (InstrumentData | null)[] = [];
+    const store = props.instrumentStore;
+    if (store) {
+      for (const [slot, data] of store.entries()) {
+        instruments[slot] = data;
+      }
+    }
+
+    const projectName = importedProjectName.value || 'Tracker Project';
+
+    try {
+      const blob = await exportTrackerProject({
+        projectName,
+        bpm: bpm.value,
+        patterns,
+        instruments,
+        baseProject: importedProject.value,
+      });
+      downloadFile(`${sanitizeTrackerName(projectName, 32)}.zip`, blob);
+    } catch (e) {
+      console.error('Project export failed:', e);
+    }
+  }
+
   //----------------------------------
   // Import Project
   //----------------------------------
   const projectPatterns = ref<{ name: string; data: PatternData }[]>([]);
   const activePatternIndex = ref<number>(-1);
+  // Full ProjectData from an imported project.mt — kept so that re-exporting
+  // preserves song structure, track names and delay/reverb settings.
+  const importedProject = ref<ProjectData | null>(null);
+  const importedProjectName = ref<string>('');
 
   async function handleImportProject(files: File[]) {
     const instruments: { slot: number; data: InstrumentData }[] = [];
@@ -668,9 +716,8 @@
         const projectData = await Tracker.readProject(projectFile);
         if (projectData) {
           bpm.value = projectData.values.globalTempo || 120;
-          if (projectData.values.trackNames?.length) {
-            // Track names are available in projectData.values.trackNames
-          }
+          importedProject.value = projectData;
+          importedProjectName.value = projectData.projectName || '';
         }
       } catch (e) {
         console.warn('Failed to read project.mt:', e);
@@ -770,7 +817,7 @@
       patternContainer.value.scrollTop = 0;
     }
 
-    const msPerStep = (60 / bpm.value) * 1000 / 4;
+    const msPerStep = ((60 / bpm.value) * 1000) / 4;
 
     const play = () => {
       if (!isPlaying.value || !patternData.value) return;
@@ -841,7 +888,11 @@
     activeNotes.forEach((vfs, key) => {
       const noteNum = parseInt(key.split('-')[2], 10);
       if (vfs && !isNaN(noteNum)) {
-        try { AudioEngine.notesOff(noteNum); } catch (e) { /* ignore */ }
+        try {
+          AudioEngine.notesOff(noteNum);
+        } catch {
+          /* ignore */
+        }
       }
     });
     activeNotes.clear();
@@ -858,7 +909,7 @@
         try {
           AudioEngine.notesOn(vfs, note, 100);
           activeNotes.set(`track-${t}-row-${row}`, vfs);
-        } catch (e) {
+        } catch {
           // AudioEngine might be stale, skip this note
         }
       }
@@ -938,7 +989,11 @@
     </div>
     <div v-if="projectPatterns.length > 1" class="group separator" />
     <div v-if="projectPatterns.length > 1" class="group">
-      <select class="pattern-select" :value="activePatternIndex" @change="selectProjectPattern(parseInt(($event.target as HTMLSelectElement).value))">
+      <select
+        class="pattern-select"
+        :value="activePatternIndex"
+        @change="selectProjectPattern(parseInt(($event.target as HTMLSelectElement).value))"
+      >
         <option v-for="(p, i) in projectPatterns" :key="i" :value="i">{{ p.name }}</option>
       </select>
     </div>
@@ -960,10 +1015,13 @@
     <div v-if="patternData" class="group">
       <Button @click="handleMidiExport"> <sup>Export</sup> MIDI </Button>
       <Button @click="handleAbletonExport"> <sup>Export</sup> Ableton </Button>
+      <Button @click="handleProjectExport"> <sup>Export</sup> Project </Button>
     </div>
     <div v-if="patternData" class="group separator" />
     <div v-if="patternData" class="group">
-      <Button @click="emit('edit-instrument', currentInstrumentSlot)"> <sup>Edit</sup> Instrument {{ currentInstrumentSlot }}</Button>
+      <Button @click="emit('edit-instrument', currentInstrumentSlot)">
+        <sup>Edit</sup> Instrument {{ currentInstrumentSlot }}</Button
+      >
     </div>
   </div>
 </template>

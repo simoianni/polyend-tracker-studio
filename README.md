@@ -31,8 +31,28 @@ Built with [`tracker-lib`](https://github.com/polyend/tracker-lib), Vue 3, and E
 
 ### Import / Export
 - **Import:** `.pti` instruments, `.mtp` patterns, original Polyend Tracker project folders (`project.mt` + `patterns/*.mtp` + `*.pti`)
-- **Export:** `.pti` (instrument), `.mtp` (pattern), `.mid` (MIDI file), **Ableton Live 12** project (`.zip` with `.als` + samples), `.wav` (sample only)
+- **Export:** **full Tracker project** (`.zip` with the SD-card folder structure — see below), `.pti` (instrument), `.mtp` (pattern), `.mid` (MIDI file), **Ableton Live 12** project (`.zip` with `.als` + samples), `.wav` (sample only)
 - **Persistence:** Instruments auto-saved to IndexedDB (survives page reloads)
+
+#### Tracker Project Export
+
+**Export Project** downloads a zip laid out exactly like a project folder on the Tracker's SD card:
+
+```
+MyProject/
+├── project.mt          Song settings (BPM, track names, delay/reverb, playlist)
+├── patternsMetadata    Pattern names
+├── patterns/
+│   ├── pattern_01.mtp
+│   └── ...
+└── instruments/
+    ├── 1 kick.pti
+    └── ...
+```
+
+Unzip it into the `/Projects` folder of the SD card and open it on the device (Tracker, Tracker+ or Tracker Mini). If the project was originally imported from the device, its song structure, track names and FX settings are preserved on re-export.
+
+> ⚠️ The `patternsMetadata` file position (project root) follows `tracker-lib`'s default naming; it is not part of the older public file-format docs. If pattern names don't show up on your device, please open an issue.
 
 
 ## Tech Stack
@@ -63,7 +83,8 @@ npm run dev
 | `npm run build` | Production build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript validation |
-| `npm run test` | Formatting + lint + typecheck |
+| `npm run test:unit` | Vitest unit tests (export/import round-trips) |
+| `npm run test` | Formatting + lint + typecheck + unit tests |
 
 
 ## Keyboard Shortcuts
@@ -104,7 +125,8 @@ Additional features in this fork:
 - Pattern Editor with step sequencing and live playback
 - Beat Slice mode with per-note slice triggering
 - Ableton Live project export, MIDI export
-- Full Tracker project import, IndexedDB persistence
+- Full Tracker project import **and export** (SD-card ready zip), IndexedDB persistence
+- Round-trip unit tests for the export/import pipeline (Vitest)
 - Built-in help guide, improved zoom, UI refinements
 
 

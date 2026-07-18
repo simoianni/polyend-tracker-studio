@@ -15,7 +15,8 @@
     "esModuleInterop": true,
     "noImplicitAny": false,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@tracker-internals/*": ["./node_modules/@polyend/tracker-lib/dist/*"]
     },
     "lib": ["esnext", "dom", "dom.iterable", "scripthost"],
     "skipLibCheck": true,
