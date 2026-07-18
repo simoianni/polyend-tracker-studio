@@ -41,11 +41,11 @@ export function exportPatternAsMidi(
   chunks.push(midiHeader(1, numTracks, TICKS_PER_QUARTER));
 
   // Tempo track (first track)
-  chunks.push(midiTempoTrack(bpm, TICKS_PER_QUARTER));
+  chunks.push(midiTempoTrack(bpm));
 
   // Note tracks
   for (const track of activeTracks) {
-    chunks.push(midiNoteTrack(track, ticksPerStep, TICKS_PER_QUARTER));
+    chunks.push(midiNoteTrack(track, ticksPerStep));
   }
 
   return concatArrays(chunks);
@@ -55,20 +55,22 @@ function midiHeader(format: number, numTracks: number, division: number): Uint8A
   const data = new Uint8Array(14);
   data.set([0x4d, 0x54, 0x68, 0x64], 0); // "MThd"
   data.set([0x00, 0x00, 0x00, 0x06], 4); // length = 6
-  data.set([0x00, format], 8);             // format
-  data.set([0x00, numTracks], 10);          // num tracks
+  data.set([0x00, format], 8); // format
+  data.set([0x00, numTracks], 10); // num tracks
   data.set([(division >> 8) & 0x7f, division & 0xff], 12); // division
   return data;
 }
 
-function midiTempoTrack(bpm: number, ticksPerQuarter: number): Uint8Array {
+function midiTempoTrack(bpm: number): Uint8Array {
   const events: number[][] = [];
 
   // Tempo meta event: microseconds per quarter note
   const microPerQuarter = Math.round(60000000 / bpm);
   events.push([
     0x00, // delta time = 0
-    0xff, 0x51, 0x03, // meta event: set tempo
+    0xff,
+    0x51,
+    0x03, // meta event: set tempo
     (microPerQuarter >> 16) & 0xff,
     (microPerQuarter >> 8) & 0xff,
     microPerQuarter & 0xff,
@@ -77,7 +79,9 @@ function midiTempoTrack(bpm: number, ticksPerQuarter: number): Uint8Array {
   // Time signature: 4/4
   events.push([
     0x00, // delta time = 0
-    0xff, 0x58, 0x04, // meta event: time signature
+    0xff,
+    0x58,
+    0x04, // meta event: time signature
     0x04, // numerator = 4
     0x02, // denominator = 2 (power of 2, so 2^2 = 4)
     0x18, // clocks per click (24)
@@ -93,7 +97,6 @@ function midiTempoTrack(bpm: number, ticksPerQuarter: number): Uint8Array {
 function midiNoteTrack(
   track: { notes: { step: number; note: number; velocity: number }[]; name: string },
   ticksPerStep: number,
-  ticksPerQuarter: number,
 ): Uint8Array {
   const events: { time: number; data: number[] }[] = [];
 

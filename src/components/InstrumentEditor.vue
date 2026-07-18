@@ -130,18 +130,21 @@
   //---------------------------------------------------
   // watch(instrumentData, async (newval, oldval) => {}, { deep: true });
 
-  watch(() => props.modelValue, (newVal) => {
-    if (newVal && newVal !== instrumentData.value) {
-      instrumentData.value = newVal;
-      changeActiveView(InstrumentView.PLAYBACK);
-      nextTick(async () => {
-        activeView.value?.render();
-        if (AudioEngine.isInitialized) {
-          vfsInstrument = await AudioEngine.addInstrument(newVal);
-        }
-      });
-    }
-  });
+  watch(
+    () => props.modelValue,
+    (newVal) => {
+      if (newVal && newVal !== instrumentData.value) {
+        instrumentData.value = newVal;
+        changeActiveView(InstrumentView.PLAYBACK);
+        nextTick(async () => {
+          activeView.value?.render();
+          if (AudioEngine.isInitialized) {
+            vfsInstrument = await AudioEngine.addInstrument(newVal);
+          }
+        });
+      }
+    },
+  );
 
   watch(instrumentData, (newVal) => {
     emit('update:modelValue', newVal);

@@ -164,8 +164,23 @@
       <li v-for="(page, pidx) in pages" :key="`page-${pidx}`" :class="{ active: page === activePage }" />
     </ul>
     <slot />
-    <input v-if="type === 'file'" type="file" :accept="mimeTypes" tabindex="-1" aria-hidden="true" @input="handleInput" />
-    <input v-if="type === 'folder'" type="file" webkitdirectory directory tabindex="-1" aria-hidden="true" @input="handleInput" />
+    <input
+      v-if="type === 'file'"
+      type="file"
+      :accept="mimeTypes"
+      tabindex="-1"
+      aria-hidden="true"
+      @input="handleInput"
+    />
+    <input
+      v-if="type === 'folder'"
+      type="file"
+      webkitdirectory
+      directory
+      tabindex="-1"
+      aria-hidden="true"
+      @input="handleInput"
+    />
   </button>
 </template>
 

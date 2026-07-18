@@ -5500,15 +5500,13 @@ const ID_BLOCK = 200;
 
 function fillTrackIds(template: string, ti: number): string {
   let s = template;
-  for (let n = 0; n < ID_BLOCK; n++)
-    s = s.replaceAll(`__ID${n}__`, String(TRACK_ID_BASE + ti * ID_BLOCK + n));
+  for (let n = 0; n < ID_BLOCK; n++) s = s.replaceAll(`__ID${n}__`, String(TRACK_ID_BASE + ti * ID_BLOCK + n));
   return s;
 }
 
 function fillDeviceIds(template: string, ti: number): string {
   let s = template;
-  for (let n = 0; n < ID_BLOCK; n++)
-    s = s.replaceAll(`__DID${n}__`, String(DEVICE_ID_BASE + ti * ID_BLOCK + n));
+  for (let n = 0; n < ID_BLOCK; n++) s = s.replaceAll(`__DID${n}__`, String(DEVICE_ID_BASE + ti * ID_BLOCK + n));
   return s;
 }
 
@@ -5523,7 +5521,7 @@ function parseWav(wav: ArrayBuffer): { sampleCount: number; sampleRate: number }
   const bytesPerSample = bitsPerSample / 8;
   let pos = 36;
   while (pos < wav.byteLength - 8) {
-    const id = String.fromCharCode(v.getUint8(pos), v.getUint8(pos+1), v.getUint8(pos+2), v.getUint8(pos+3));
+    const id = String.fromCharCode(v.getUint8(pos), v.getUint8(pos + 1), v.getUint8(pos + 2), v.getUint8(pos + 3));
     const sz = v.getUint32(pos + 4, true);
     if (id === 'data') return { sampleCount: sz / (channels * bytesPerSample), sampleRate };
     pos += 8 + sz;
@@ -5581,7 +5579,7 @@ function gzipXml(xml: string): Promise<Uint8Array> {
   const writer = stream.writable.getWriter();
   writer.write(data);
   writer.close();
-  return new Response(stream.readable).arrayBuffer().then(b => new Uint8Array(b));
+  return new Response(stream.readable).arrayBuffer().then((b) => new Uint8Array(b));
 }
 
 const T11 = '\t\t\t\t\t\t\t\t\t\t\t';
@@ -5601,35 +5599,43 @@ function buildNotesBlock(
       // Sort by time — notes come from multiple columns and may be out of order
       const sorted = [...notes].sort((a, b) => a.time - b.time);
       const notesXml = sorted
-        .map(n => `${T15}<MidiNoteEvent Time="${n.time.toFixed(6)}" Duration="${n.duration.toFixed(6)}" Velocity="${n.velocity}" OffVelocity="64" NoteId="${n.noteId}" />`)
+        .map(
+          (n) =>
+            `${T15}<MidiNoteEvent Time="${n.time.toFixed(6)}" Duration="${n.duration.toFixed(6)}" Velocity="${n.velocity}" OffVelocity="64" NoteId="${n.noteId}" />`,
+        )
         .join('\n');
       totalNotes += notes.length;
       return `${T13}<KeyTrack Id="${pitch}">\n${T14}<Notes>\n${notesXml}\n${T14}</Notes>\n${T14}<MidiKey Value="${pitch}" />\n${T13}</KeyTrack>`;
-    }).join('\n');
+    })
+    .join('\n');
 
-  return `<Notes>\n${T12}<KeyTracks>\n${keyTracksXml}\n${T12}</KeyTracks>\n` +
+  return (
+    `<Notes>\n${T12}<KeyTracks>\n${keyTracksXml}\n${T12}</KeyTracks>\n` +
     `${T12}<PerNoteEventStore>\n${T13}<EventLists />\n${T12}</PerNoteEventStore>\n` +
     `${T12}<NoteProbabilityGroups />\n` +
     `${T12}<ProbabilityGroupIdGenerator>\n${T13}<NextId Value="1" />\n${T12}</ProbabilityGroupIdGenerator>\n` +
     `${T12}<NoteIdGenerator>\n${T13}<NextId Value="${totalNotes + 1}" />\n${T12}</NoteIdGenerator>\n` +
-    `${T11}</Notes>`;
+    `${T11}</Notes>`
+  );
 }
 
 function buildMidiClip(
-  name: string, clipLenBeats: number,
+  name: string,
+  clipLenBeats: number,
   notesByPitch: Map<number, { time: number; duration: number; velocity: number; noteId: number }[]>,
 ): string {
-  return MIDI_CLIP_TPL
-    .replaceAll('__CLIP_NAME__', esc(name))
+  return MIDI_CLIP_TPL.replaceAll('__CLIP_NAME__', esc(name))
     .replaceAll('__CLIP_LEN__', clipLenBeats.toFixed(6))
     .replace('__NOTES_BLOCK__', buildNotesBlock(notesByPitch));
 }
 
 function emptySlot(id: number): string {
-  return `${SLOT_TABS}<ClipSlot Id="${id}">\n${SLOT_TABS}\t<LomId Value="0" />\n` +
+  return (
+    `${SLOT_TABS}<ClipSlot Id="${id}">\n${SLOT_TABS}\t<LomId Value="0" />\n` +
     `${SLOT_TABS}\t<ClipSlot>\n${SLOT_TABS}\t\t<Value />\n${SLOT_TABS}\t</ClipSlot>\n` +
     `${SLOT_TABS}\t<HasStop Value="true" />\n${SLOT_TABS}\t<NeedRefreeze Value="true" />\n` +
-    `${SLOT_TABS}</ClipSlot>`;
+    `${SLOT_TABS}</ClipSlot>`
+  );
 }
 
 function emptyClipSlots(count: number): string {
@@ -5637,7 +5643,8 @@ function emptyClipSlots(count: number): string {
 }
 
 function buildScene(index: number, name: string): string {
-  return `\t\t\t<Scene Id="${index}">\n` +
+  return (
+    `\t\t\t<Scene Id="${index}">\n` +
     `\t\t\t\t<FollowAction>\n\t\t\t\t\t<FollowTime Value="4" />\n\t\t\t\t\t<IsLinked Value="true" />\n` +
     `\t\t\t\t\t<LoopIterations Value="1" />\n\t\t\t\t\t<FollowActionA Value="4" />\n` +
     `\t\t\t\t\t<FollowActionB Value="0" />\n\t\t\t\t\t<FollowChanceA Value="100" />\n` +
@@ -5646,7 +5653,8 @@ function buildScene(index: number, name: string): string {
     `\t\t\t\t</FollowAction>\n\t\t\t\t<Name Value="${esc(name)}" />\n\t\t\t\t<Annotation Value="" />\n` +
     `\t\t\t\t<Color Value="-1" />\n\t\t\t\t<Tempo Value="-1" />\n\t\t\t\t<IsTempoEnabled Value="false" />\n` +
     `\t\t\t\t<TimeSignatureId Value="201" />\n\t\t\t\t<IsTimeSignatureEnabled Value="false" />\n` +
-    `\t\t\t\t<LomId Value="0" />\n\t\t\t\t<ClipSlotsListWrapper LomId="0" />\n\t\t\t</Scene>`;
+    `\t\t\t\t<LomId Value="0" />\n\t\t\t\t<ClipSlotsListWrapper LomId="0" />\n\t\t\t</Scene>`
+  );
 }
 
 // ============================================================
@@ -5663,8 +5671,7 @@ function generateAbletonXml(
       const len = track.length + 1;
       for (let s = 0; s < len; s++) {
         const step = track.steps[s];
-        if (step && step.note >= 0 && step.note <= 127 && step.instrument >= 0)
-          usedInstruments.add(step.instrument);
+        if (step && step.note >= 0 && step.note <= 127 && step.instrument >= 0) usedInstruments.add(step.instrument);
       }
     }
 
@@ -5682,9 +5689,7 @@ function generateAbletonXml(
     for (const p of patterns) {
       const slotId = mainSlots.length;
       // Use max step count across all columns
-      const numSteps = p.data.tracks.length > 0
-        ? Math.max(...p.data.tracks.map(t => t.length + 1))
-        : 16;
+      const numSteps = p.data.tracks.length > 0 ? Math.max(...p.data.tracks.map((t) => t.length + 1)) : 16;
       const clipLenBeats = numSteps * 0.25;
       const notesByPitch = new Map<number, { time: number; duration: number; velocity: number; noteId: number }[]>();
       let noteIdInClip = 1;
@@ -5706,11 +5711,12 @@ function generateAbletonXml(
         const clipXml = buildMidiClip(p.name, clipLenBeats, notesByPitch);
         mainSlots.push(
           `${SLOT_TABS}<ClipSlot Id="${slotId}">\n${SLOT_TABS}\t<LomId Value="0" />\n` +
-          `${SLOT_TABS}\t<ClipSlot>\n${SLOT_TABS}\t\t<Value>\n` +
-          clipXml + '\n' +
-          `${SLOT_TABS}\t\t</Value>\n${SLOT_TABS}\t</ClipSlot>\n` +
-          `${SLOT_TABS}\t<HasStop Value="true" />\n${SLOT_TABS}\t<NeedRefreeze Value="true" />\n` +
-          `${SLOT_TABS}</ClipSlot>`
+            `${SLOT_TABS}\t<ClipSlot>\n${SLOT_TABS}\t\t<Value>\n` +
+            clipXml +
+            '\n' +
+            `${SLOT_TABS}\t\t</Value>\n${SLOT_TABS}\t</ClipSlot>\n` +
+            `${SLOT_TABS}\t<HasStop Value="true" />\n${SLOT_TABS}\t<NeedRefreeze Value="true" />\n` +
+            `${SLOT_TABS}</ClipSlot>`,
         );
       }
       freezeSlots.push(emptySlot(slotId));
@@ -5718,7 +5724,7 @@ function generateAbletonXml(
 
     const deviceXml = inst?.wav ? buildDevice(inst, ti) : '';
 
-    let trackXml = fillTrackIds(MIDI_TRACK_TPL, ti)
+    const trackXml = fillTrackIds(MIDI_TRACK_TPL, ti)
       .replaceAll('__TRACK_ID__', String(1000 + ti))
       .replaceAll('__TRACK_NAME__', esc(instName))
       .replace('__CLIP_SLOT_LIST_MAIN__', mainSlots.join('\n'))
@@ -5729,9 +5735,10 @@ function generateAbletonXml(
   }
 
   const scenesXml = patterns.map((p, i) => buildScene(i, p.name)).join('\n');
-  const mainTrackXml = MAIN_TRACK_TPL
-    .replaceAll('__BPM__', String(bpm))
-    .replace('__MAIN_TRACK_SLOTS__', emptyClipSlots(patterns.length));
+  const mainTrackXml = MAIN_TRACK_TPL.replaceAll('__BPM__', String(bpm)).replace(
+    '__MAIN_TRACK_SLOTS__',
+    emptyClipSlots(patterns.length),
+  );
 
   const nextPointeeId = DEVICE_ID_BASE + (usedSlots.length + 2) * ID_BLOCK;
 

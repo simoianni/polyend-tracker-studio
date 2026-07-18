@@ -4,7 +4,7 @@
   //  Imports
   //
   //---------------------------------------------------
-  import { ref, computed, watch, onBeforeUnmount, onMounted, shallowRef } from 'vue';
+  import { ref, computed, onBeforeUnmount, onMounted, shallowRef } from 'vue';
   import { watchDebounced } from '@vueuse/core';
   import { InstrumentData } from '@polyend/tracker-lib';
   import PatternEditor from '@/components/PatternEditor.vue';
@@ -101,8 +101,7 @@
     // Tab to switch views
     if (evt.key === 'Tab' && !evt.ctrlKey && !evt.metaKey) {
       // Only handle when not in an input
-      if (document.activeElement === document.body || 
-          document.activeElement?.hasAttribute('data-pattern-container')) {
+      if (document.activeElement === document.body || document.activeElement?.hasAttribute('data-pattern-container')) {
         evt.preventDefault();
         activeView.value = activeView.value === 'pattern' ? 'instruments' : 'pattern';
       }
@@ -132,16 +131,8 @@
 <template>
   <div class="unified-tracker">
     <nav class="tab-bar">
-      <button
-        :class="{ active: activeView === 'pattern' }"
-        @click="switchView('pattern')"
-      >
-        Pattern Editor
-      </button>
-      <button
-        :class="{ active: activeView === 'instruments' }"
-        @click="switchView('instruments')"
-      >
+      <button :class="{ active: activeView === 'pattern' }" @click="switchView('pattern')">Pattern Editor</button>
+      <button :class="{ active: activeView === 'instruments' }" @click="switchView('instruments')">
         Instrument Editor
       </button>
       <span class="shortcut-hint">Tab to switch</span>
@@ -149,13 +140,19 @@
     </nav>
 
     <div v-show="activeView === 'pattern'" class="view-container">
-      <PatternEditor :instrument-store="instrumentStore" @edit-instrument="selectInstrumentSlot" @import-instruments="handleInstrumentImport" />
+      <PatternEditor
+        :instrument-store="instrumentStore"
+        @edit-instrument="selectInstrumentSlot"
+        @import-instruments="handleInstrumentImport"
+      />
     </div>
 
     <div v-if="activeView === 'instruments'" class="view-container">
       <div class="slot-selector">
         <button class="slot-nav" @click="changeInstrumentSlot(-1)">&lt;</button>
-        <span class="slot-label">{{ slotLabel }} <em>(slot {{ currentInstrumentSlot }})</em></span>
+        <span class="slot-label"
+          >{{ slotLabel }} <em>(slot {{ currentInstrumentSlot }})</em></span
+        >
         <button class="slot-nav" @click="changeInstrumentSlot(1)">&gt;</button>
       </div>
       <InstrumentEditor
