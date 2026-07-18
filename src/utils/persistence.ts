@@ -59,6 +59,20 @@ export async function persistInstrument(slot: number, data: InstrumentData | nul
   }
 }
 
+export async function clearPersistedInstruments(): Promise<void> {
+  try {
+    const db = await openDB();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_INSTRUMENTS, 'readwrite');
+      tx.objectStore(STORE_INSTRUMENTS).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (e) {
+    console.warn('Failed to clear persisted instruments', e);
+  }
+}
+
 export async function loadPersistedInstruments(): Promise<Map<number, InstrumentData>> {
   const instruments = new Map<number, InstrumentData>();
   try {

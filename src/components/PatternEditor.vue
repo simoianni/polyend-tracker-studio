@@ -698,7 +698,28 @@
   const importedProject = ref<ProjectData | null>(null);
   const importedProjectName = ref<string>('');
 
+  // Full editor reset: playback, patterns, imported project, BPM.
+  // Called by App.vue's "Clear" button, and before importing a new project.
+  function clearAll() {
+    if (isPlaying.value) {
+      stopPlayback();
+    }
+    removeInteractions();
+    patternData.value = null;
+    projectPatterns.value = [];
+    activePatternIndex.value = -1;
+    importedProject.value = null;
+    importedProjectName.value = '';
+    bpm.value = 120;
+  }
+
+  defineExpose({ clearAll });
+
   async function handleImportProject(files: File[]) {
+    // A project import replaces the whole editor state — leftovers from a
+    // previously loaded project (patterns, BPM, project data) must not survive.
+    clearAll();
+
     const instruments: { slot: number; data: InstrumentData }[] = [];
     const patterns: { name: string; data: PatternData }[] = [];
     const rootPatterns: { name: string; data: PatternData }[] = [];
@@ -768,9 +789,10 @@
     });
     projectPatterns.value = allPatterns;
 
-    if (instruments.length > 0) {
-      emit('import-instruments', instruments);
-    }
+    // Always emit — even with zero instruments — so App.vue replaces the whole
+    // instrument set (a project with no readable instruments must still clear
+    // the leftovers from the previous session).
+    emit('import-instruments', instruments);
 
     if (allPatterns.length > 0) {
       removeInteractions();

@@ -11,7 +11,7 @@
   import InstrumentEditor from '@/components/InstrumentEditor.vue';
   import ModalHelp from '@/components/modals/ModalHelp.vue';
   import VueComp from '@/utils/vuecomp.ts';
-  import { loadPersistedInstruments, persistInstrument } from '@/utils/persistence.ts';
+  import { clearPersistedInstruments, loadPersistedInstruments, persistInstrument } from '@/utils/persistence.ts';
 
   //---------------------------------------------------
   //
@@ -23,6 +23,9 @@
   const activeView = ref<AppView>('pattern');
   const currentInstrumentSlot = ref<number>(0);
   const instrumentStore = shallowRef<Map<number, InstrumentData | null>>(new Map());
+  const patternEditor = ref<InstanceType<typeof PatternEditor> | null>(null);
+  const clearArmed = ref(false);
+  let clearArmTimer: ReturnType<typeof setTimeout> | undefined;
 
   //---------------------------------------------------
   //
@@ -61,12 +64,36 @@
     persistInstrument(currentInstrumentSlot.value, data);
   }
 
+  // Importing a project replaces the whole instrument set: leftovers from a
+  // previous session/project must not survive (neither in memory nor in
+  // IndexedDB), otherwise old sounds bleed into the newly imported project.
   function handleInstrumentImport(instruments: { slot: number; data: InstrumentData }[]) {
+    clearPersistedInstruments();
+    const fresh = new Map<number, InstrumentData | null>();
     for (const { slot, data } of instruments) {
-      instrumentStore.value.set(slot, data);
+      fresh.set(slot, data);
       persistInstrument(slot, data);
     }
-    instrumentStore.value = new Map(instrumentStore.value);
+    instrumentStore.value = fresh;
+  }
+
+  // Full reset: patterns, instruments, persisted state — used by the
+  // "Clear" button in the tab bar. Two-step confirm to avoid accidents.
+  async function handleClearClick() {
+    if (!clearArmed.value) {
+      clearArmed.value = true;
+      clearTimeout(clearArmTimer);
+      clearArmTimer = setTimeout(() => (clearArmed.value = false), 3000);
+      return;
+    }
+    clearTimeout(clearArmTimer);
+    clearArmed.value = false;
+
+    instrumentStore.value = new Map();
+    currentInstrumentSlot.value = 0;
+    activeView.value = 'pattern';
+    await clearPersistedInstruments();
+    patternEditor.value?.clearAll();
   }
 
   // Persist edits made inside the instrument editor (slices, parameters,
@@ -135,12 +162,20 @@
       <button :class="{ active: activeView === 'instruments' }" @click="switchView('instruments')">
         Instrument Editor
       </button>
-      <span class="shortcut-hint">Tab to switch</span>
+      <button
+        class="clear-btn"
+        :class="{ armed: clearArmed }"
+        title="Clear everything (patterns, instruments, saved data)"
+        @click="handleClearClick"
+      >
+        {{ clearArmed ? 'Sure?' : 'Clear' }}
+      </button>
       <button class="help-btn" @click="showHelp" title="Guide / Help">?</button>
     </nav>
 
     <div v-show="activeView === 'pattern'" class="view-container">
       <PatternEditor
+        ref="patternEditor"
         :instrument-store="instrumentStore"
         @edit-instrument="selectInstrumentSlot"
         @import-instruments="handleInstrumentImport"
@@ -217,12 +252,22 @@
       }
     }
 
-    .shortcut-hint {
-      display: flex;
-      align-items: center;
-      padding: 0 12px;
-      font-size: 10px;
-      color: #555;
+    .clear-btn {
+      margin-left: 8px;
+      color: #777;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.15s;
+
+      &:hover {
+        color: #fff;
+        border-color: rgba(255, 100, 100, 0.4);
+      }
+
+      &.armed {
+        color: #fff;
+        background: #7a2222;
+        border-color: rgba(255, 100, 100, 0.6);
+      }
     }
 
     .help-btn {
